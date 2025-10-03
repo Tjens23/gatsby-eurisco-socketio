@@ -2,7 +2,8 @@ import React from "react";
 import GetHealth from "../components/GetHealth";
 import GetEvents from "../components/GetEvents";
 import GetHosts from "../components/GetHosts";
-import CCSMApiService from "../components/CCSMApiService";
+import ProblemsComponent from "../components/ProblemsComponent";
+import TriggerComponent from "../components/TriggerComponent";
 
 export default function Home() {
   return (
@@ -21,23 +22,11 @@ export default function Home() {
       </h1>
 
       <div style={{ display: "grid", gap: "24px" }}>
-        {/* Health Check Section */}
         <GetHealth />
-
-        {/* API Explorer Section */}
-        <CCSMApiService />
-
-        {/* Events and Hosts in a grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "24px",
-          }}
-        >
-          <GetEvents limit={5} autoRefresh={true} refreshInterval={30000} />
-          <GetHosts limit={10} autoRefresh={true} refreshInterval={60000} />
-        </div>
+        <GetEvents limit={5} autoRefresh={true} refreshInterval={30000} />
+        <GetHosts limit={10} autoRefresh={true} refreshInterval={60000} />
+        <ProblemsComponent />
+        <TriggerComponent defaultHost="cc-mombat741-un1" />
       </div>
     </div>
   );

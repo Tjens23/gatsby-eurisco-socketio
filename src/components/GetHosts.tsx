@@ -39,7 +39,7 @@ export default function GetHosts({
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://tin.eurisco:8080/getHosts", {
+      const response = await fetch("http://tin.eurisco:8080/api/v1/hosts", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
