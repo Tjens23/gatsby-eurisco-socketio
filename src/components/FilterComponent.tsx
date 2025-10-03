@@ -19,7 +19,6 @@ interface FilterOption {
   id: FilterType;
   label: string;
   description: string;
-  icon: string;
 }
 
 const filterOptions: FilterOption[] = [
@@ -27,31 +26,26 @@ const filterOptions: FilterOption[] = [
     id: "all",
     label: "All Components",
     description: "Show all monitoring components",
-    icon: "📊",
   },
   {
     id: "events",
     label: "Events",
     description: "Show recent Zabbix events",
-    icon: "📋",
   },
   {
     id: "problems",
     label: "Problems",
     description: "Show active problems",
-    icon: "⚠️",
   },
   {
     id: "triggers",
     label: "Triggers",
     description: "Show trigger status",
-    icon: "🎯",
   },
   {
     id: "hosts",
     label: "Hosts",
     description: "Show monitored hosts",
-    icon: "🖥️",
   },
 ];
 
@@ -116,7 +110,6 @@ export default function FilterComponent({
                 color: activeFilter === option.id ? "#1e40af" : "#1f2937",
               }}
             >
-              <span style={{ fontSize: "20px" }}>{option.icon}</span>
               {option.label}
             </div>
             <div
