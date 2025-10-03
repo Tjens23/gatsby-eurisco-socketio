@@ -1,105 +1,44 @@
-import * as React from "react"
-import { useEffect, useState } from "react"
-import { io, Socket } from "socket.io-client"
-import type { HeadFC, PageProps } from "gatsby"
-import Card from "../components/Card"
-import SocketDataCard from "../components/SocketDataCard"
+import React from "react";
+import GetHealth from "../components/GetHealth";
+import GetEvents from "../components/GetEvents";
+import GetHosts from "../components/GetHosts";
+import CCSMApiService from "../components/CCSMApiService";
 
-const IndexPage: React.FC<PageProps> = () => {
-  const [socketData, setSocketData] = useState<any>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [allEvents, setAllEvents] = useState<any[]>([]);
-
-  useEffect(() => {
-    // Connect to your Socket.IO server (adjust the URL as needed)
-    const socket: Socket = io("http://localhost:1337");
-
-    socket.on('connect', () => {
-      console.log('Connected to Socket.IO server');
-      setIsConnected(true);
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Disconnected from Socket.IO server');
-      setIsConnected(false);
-    });
-
-    // Listen for 'data' events
-    socket.on("data", (data) => {
-      console.log('Received data:', data);
-      setSocketData(data);
-      setAllEvents(prev => [...prev, { ...data, receivedAt: new Date().toISOString() }].slice(-10)); // Keep last 10 events
-    });
-
-    // Clean up on unmount
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
+export default function Home() {
   return (
-    <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '40px', color: '#1f2937' }}>
-        Socket.IO Real-time Dashboard
-      </h1>
-      
-      <Card 
-        title="Connection Status" 
-        variant={isConnected ? 'success' : 'error'}
+    <div
+      style={{
+        padding: "20px",
+        fontFamily: "Arial, sans-serif",
+        maxWidth: "1400px",
+        margin: "0 auto",
+      }}
+    >
+      <h1
+        style={{ textAlign: "center", marginBottom: "40px", color: "#1f2937" }}
       >
-        <div style={{ 
-          fontSize: '18px',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          {isConnected ? '🟢 Connected to Socket.IO Server' : '🔴 Disconnected from Server'}
+        CCSM Gateway Dashboard
+      </h1>
+
+      <div style={{ display: "grid", gap: "24px" }}>
+        {/* Health Check Section */}
+        <GetHealth />
+
+        {/* API Explorer Section */}
+        <CCSMApiService />
+
+        {/* Events and Hosts in a grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "24px",
+          }}
+        >
+          <GetEvents limit={5} autoRefresh={true} refreshInterval={30000} />
+          <GetHosts limit={10} autoRefresh={true} refreshInterval={60000} />
         </div>
-        <p style={{ margin: '8px 0 0 0', color: '#6b7280' }}>
-          Server: http://localhost:1337
-        </p>
-      </Card>
-
-      {socketData && (
-        <SocketDataCard 
-          data={socketData.data || socketData}
-          timestamp={socketData.timestamp || socketData.receivedAt}
-          type={socketData.type}
-        />
-      )}
-
-      <Card title="Event History" subtitle="Recent events from Strapi backend">
-        {allEvents.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {allEvents.slice().reverse().map((event, index) => (
-              <SocketDataCard
-                key={index}
-                data={event.data}
-                timestamp={event.receivedAt}
-                type={event.type}
-              />
-            ))}
-          </div>
-        ) : (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '40px 20px',
-            color: '#6b7280',
-            fontSize: '16px'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📭</div>
-            <p>No events received yet.</p>
-            <p style={{ fontSize: '14px', marginTop: '8px' }}>
-              Try creating, updating, or deleting content in your Strapi admin panel.
-            </p>
-          </div>
-        )}
-      </Card>
-    </main>
-  )
+      </div>
+    </div>
+  );
 }
-
-export default IndexPage
-
-export const Head: HeadFC = () => <title>Home Page</title>
