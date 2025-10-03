@@ -26,12 +26,22 @@ interface ProblemsComponentProps {
   limit?: number;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  severityFilter?: string;
+  statusFilter?: string;
+  searchTerm?: string;
+  selectedHost?: string;
+  timeRange?: string;
 }
 
 export default function ProblemsComponent({
   limit = 10,
   autoRefresh = false,
   refreshInterval = 30000,
+  severityFilter = "all",
+  statusFilter = "all",
+  searchTerm = "",
+  selectedHost = "",
+  timeRange = "24h",
 }: ProblemsComponentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,15 +66,77 @@ export default function ProblemsComponent({
 
       const result = await response.json();
 
-      // Client-side limiting since API doesn't accept params
-      const limitedData = Array.isArray(result) ? result.slice(0, limit) : [];
-      setProblems(limitedData);
+      // Apply filters and then limit
+      const filteredData = filterProblems(Array.isArray(result) ? result : []);
+      setProblems(filteredData.slice(0, limit));
       setLastFetch(new Date());
     } catch (err: any) {
       setError(err.message || "Failed to fetch problems");
       setProblems([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const filterProblems = (problemList: Problem[]) => {
+    return problemList.filter((problem) => {
+      // Severity filter
+      if (severityFilter !== "all" && problem.severity !== severityFilter) {
+        return false;
+      }
+
+      // Status filter (for problems, we can check acknowledged status)
+      if (statusFilter !== "all") {
+        if (statusFilter === "ok" && problem.acknowledged !== "0") {
+          return false;
+        }
+        if (statusFilter === "problem" && problem.acknowledged === "0") {
+          return false;
+        }
+      }
+
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesName = problem.name.toLowerCase().includes(searchLower);
+        const matchesOpData = problem.opdata
+          .toLowerCase()
+          .includes(searchLower);
+
+        if (!matchesName && !matchesOpData) {
+          return false;
+        }
+      }
+
+      // Time range filter
+      if (timeRange !== "all") {
+        const problemTime = parseInt(problem.clock) * 1000;
+        const now = Date.now();
+        const timeRangeMs = getTimeRangeMs(timeRange);
+
+        if (now - problemTime > timeRangeMs) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  const getTimeRangeMs = (range: string) => {
+    switch (range) {
+      case "1h":
+        return 60 * 60 * 1000;
+      case "6h":
+        return 6 * 60 * 60 * 1000;
+      case "24h":
+        return 24 * 60 * 60 * 1000;
+      case "7d":
+        return 7 * 24 * 60 * 60 * 1000;
+      case "30d":
+        return 30 * 24 * 60 * 60 * 1000;
+      default:
+        return Infinity;
     }
   };
 
@@ -75,7 +147,16 @@ export default function ProblemsComponent({
       const interval = setInterval(getProblems, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, refreshInterval, limit]);
+  }, [
+    autoRefresh,
+    refreshInterval,
+    limit,
+    severityFilter,
+    statusFilter,
+    searchTerm,
+    selectedHost,
+    timeRange,
+  ]);
 
   const formatTimestamp = (clock: string) => {
     const timestamp = parseInt(clock) * 1000;

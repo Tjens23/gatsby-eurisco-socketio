@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from "react";
 import Card from "./Card";
 
-// FIXED INTERFACE
 interface TriggerComponentProps {
-  limit?: number;
+    useEffect(() => {
+    fetchTriggers(selectedHost);
+
+    if (autoRefresh) {
+      const interval = setInterval(
+        () => fetchTriggers(selectedHost),
+        refreshInterval
+      );
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, refreshInterval, selectedHost, severityFilter, statusFilter, searchTerm, timeRange]);ber;
   autoRefresh?: boolean;
   refreshInterval?: number;
   defaultHost?: string;
@@ -15,15 +24,15 @@ interface TriggerComponentProps {
 }
 
 export default function TriggerComponent(props: TriggerComponentProps) {
-  const {
-    limit = 10,
-    autoRefresh,
+  const { 
+    limit = 10, 
+    autoRefresh, 
     refreshInterval,
     severityFilter = "all",
     statusFilter = "all",
     searchTerm = "",
     selectedHost: propSelectedHost = "",
-    timeRange = "24h",
+    timeRange = "24h"
   } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,16 +104,10 @@ export default function TriggerComponent(props: TriggerComponentProps) {
       // Search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        const matchesDescription = trigger.description
-          ?.toLowerCase()
-          .includes(searchLower);
-        const matchesComments = trigger.comments
-          ?.toLowerCase()
-          .includes(searchLower);
-        const matchesExpression = trigger.expression
-          ?.toLowerCase()
-          .includes(searchLower);
-
+        const matchesDescription = trigger.description?.toLowerCase().includes(searchLower);
+        const matchesComments = trigger.comments?.toLowerCase().includes(searchLower);
+        const matchesExpression = trigger.expression?.toLowerCase().includes(searchLower);
+        
         if (!matchesDescription && !matchesComments && !matchesExpression) {
           return false;
         }

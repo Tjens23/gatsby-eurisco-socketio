@@ -35,12 +35,20 @@ interface GetEventsProps {
   limit?: number;
   autoRefresh?: boolean;
   refreshInterval?: number;
+  severityFilter?: string;
+  searchTerm?: string;
+  selectedHost?: string;
+  timeRange?: string;
 }
 
 export default function GetEvents({
   limit = 10,
   autoRefresh = false,
   refreshInterval = 30000,
+  severityFilter = "all",
+  searchTerm = "",
+  selectedHost = "",
+  timeRange = "24h",
 }: GetEventsProps) {
   const [events, setEvents] = useState<ZabbixEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,13 +71,83 @@ export default function GetEvents({
       }
 
       const data = await response.json();
-      setEvents(Array.isArray(data) ? data.slice(0, limit) : []);
+      const filteredData = filterEvents(Array.isArray(data) ? data : []);
+      setEvents(filteredData.slice(0, limit));
       setLastFetch(new Date());
     } catch (err: any) {
       setError(err.message || "Failed to fetch events");
       setEvents([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const filterEvents = (eventList: ZabbixEvent[]) => {
+    return eventList.filter((event) => {
+      // Severity filter
+      if (severityFilter !== "all" && event.severity !== severityFilter) {
+        return false;
+      }
+
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesName = event.name.toLowerCase().includes(searchLower);
+        const matchesHost = event.hosts.some(
+          (host) =>
+            host.name.toLowerCase().includes(searchLower) ||
+            host.host.toLowerCase().includes(searchLower)
+        );
+        const matchesTags = event.tags?.some(
+          (tag) =>
+            tag.tag.toLowerCase().includes(searchLower) ||
+            tag.value.toLowerCase().includes(searchLower)
+        );
+
+        if (!matchesName && !matchesHost && !matchesTags) {
+          return false;
+        }
+      }
+
+      // Host filter
+      if (selectedHost) {
+        const matchesHost = event.hosts.some(
+          (host) => host.name === selectedHost || host.host === selectedHost
+        );
+        if (!matchesHost) {
+          return false;
+        }
+      }
+
+      // Time range filter
+      if (timeRange !== "all") {
+        const eventTime = parseInt(event.clock) * 1000;
+        const now = Date.now();
+        const timeRangeMs = getTimeRangeMs(timeRange);
+
+        if (now - eventTime > timeRangeMs) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  const getTimeRangeMs = (range: string) => {
+    switch (range) {
+      case "1h":
+        return 60 * 60 * 1000;
+      case "6h":
+        return 6 * 60 * 60 * 1000;
+      case "24h":
+        return 24 * 60 * 60 * 1000;
+      case "7d":
+        return 7 * 24 * 60 * 60 * 1000;
+      case "30d":
+        return 30 * 24 * 60 * 60 * 1000;
+      default:
+        return Infinity;
     }
   };
 
@@ -80,7 +158,15 @@ export default function GetEvents({
       const interval = setInterval(fetchEvents, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, refreshInterval, limit]);
+  }, [
+    autoRefresh,
+    refreshInterval,
+    limit,
+    severityFilter,
+    searchTerm,
+    selectedHost,
+    timeRange,
+  ]);
 
   const formatTimestamp = (clock: string) => {
     const timestamp = parseInt(clock) * 1000;
