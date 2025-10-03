@@ -9,7 +9,7 @@ interface TriggerComponentProps {
 }
 
 export default function TriggerComponent(props: TriggerComponentProps) {
-  const { limit, autoRefresh, refreshInterval } = props;
+  const { limit = 10, autoRefresh, refreshInterval } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [triggers, setTriggers] = useState<any[]>([]);
@@ -42,8 +42,10 @@ export default function TriggerComponent(props: TriggerComponentProps) {
 
       const result = await response.json();
 
-      // Client-side limiting since API doesn't accept params
-      const limitedData = Array.isArray(result) ? result.slice(0, limit) : [];
+      // Client-side limiting to top 10 triggers
+      const limitedData = Array.isArray(result)
+        ? result.slice(0, limit || 10)
+        : [];
       setTriggers(limitedData);
       setLastFetch(new Date());
     } catch (err: any) {
@@ -144,7 +146,10 @@ export default function TriggerComponent(props: TriggerComponentProps) {
 
   if (isLoading && triggers.length === 0) {
     return (
-      <Card title="CCSM Triggers" subtitle="Loading triggers from Zabbix...">
+      <Card
+        title="Top 10 CCSM Triggers"
+        subtitle="Loading triggers from Zabbix..."
+      >
         <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
       </Card>
     );
@@ -152,7 +157,7 @@ export default function TriggerComponent(props: TriggerComponentProps) {
 
   if (error) {
     return (
-      <Card title="CCSM Triggers" variant="error">
+      <Card title="Top 10 CCSM Triggers" variant="error">
         <div style={{ color: "#ef4444" }}>Error: {error}</div>
         <button
           onClick={() => fetchTriggers(selectedHost)}
@@ -174,7 +179,7 @@ export default function TriggerComponent(props: TriggerComponentProps) {
 
   return (
     <Card
-      title="CCSM Triggers"
+      title="Top 10 CCSM Triggers"
       subtitle={`${triggers.length} triggers ${
         lastFetch ? `(last updated: ${lastFetch.toLocaleTimeString()})` : ""
       }`}
@@ -204,7 +209,7 @@ export default function TriggerComponent(props: TriggerComponentProps) {
         </button>
 
         <span style={{ fontSize: "14px", color: "#6b7280" }}>
-          Showing top {limit} triggers
+          Showing top {limit || 10} triggers
         </span>
       </div>
 

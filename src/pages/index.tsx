@@ -26,7 +26,7 @@ export default function Home() {
         <GetEvents limit={5} autoRefresh={true} refreshInterval={30000} />
         <GetHosts limit={10} autoRefresh={true} refreshInterval={60000} />
         <ProblemsComponent />
-        <TriggerComponent defaultHost="cc-mombat741-un1" />
+        <TriggerComponent />
       </div>
     </div>
   );
